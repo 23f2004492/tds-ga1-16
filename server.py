@@ -492,8 +492,11 @@ You have SQLite tables from the API. Inspect their schema and samples, then use 
 
 Rules:
 - Treat user wording flexibly; identify the requested metric, date/time range, geography, product, customer, currency, and status filters.
-- Use exact date boundaries. For a calendar month use date >= first day and date < first day of next month.
+- Use exact date boundaries. For a calendar month use date >= first day and date < first day of next month. For phrases such as "orders placed in March", apply the date filter to the order placement/created date, NOT the refund date.
 - Join tables only using IDs or relations supported by the data/schema. Match product names exactly as the API spells them.
+- IMPORTANT REFUND SEMANTICS: If the user asks for "refunded orders", inspect BOTH the order table and any refunds/refund-transactions table. A refund may exist as a separate record even if the order's status is not literally "refunded". When a refunds table exists and links to orders, count an order as refunded when it has at least one qualifying refund record; use EXISTS or COUNT(DISTINCT order primary key) so multiple refund records do not duplicate an order. Use the order table for order date and region filters. Only rely exclusively on an order status field if the schema/data shows that is the actual source of refund truth or no refund table exists. If refund status is present, distinguish completed/successful refunds from pending/failed/cancelled ones; inspect actual status values instead of guessing.
+- For a count that unexpectedly returns zero, do not immediately answer zero. Inspect relevant tables, distinct status/region values, date formats/ranges, and join keys. Check whether the date is on the order or refund record, whether strings need case-insensitive matching, and whether the join actually matches records. Only return zero after validating these points.
+- Use case-insensitive comparisons for categorical values when appropriate (for example lower(trim(region)) = 'north'), while preserving exact product names as the API spells them.
 - Do not confuse gross revenue, net revenue, order value, and refunds. Subtract refunds only when the question asks for net revenue / revenue after refunds; report refunds separately when asked.
 - Use USD amounts and round money to two decimal places. Counts are integers. Use SQL for calculations instead of mental arithmetic.
 - Do not invent missing fields or guess. If there are several candidate columns, inspect samples and use the field whose meaning fits the question.
