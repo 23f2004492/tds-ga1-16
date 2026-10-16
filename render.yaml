@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: ledger-agent-server
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn server:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: QUESTION_DATA_URL
+        sync: false
+      - key: AIPROXY_TOKEN
+        sync: false
+      - key: OPENAI_BASE_URL
+        value: https://aiproxy.sanand.workers.dev/openai/v1
+      - key: OPENAI_MODEL
+        value: gpt-4o-mini
